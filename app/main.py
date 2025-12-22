@@ -2,7 +2,7 @@ from typing import List
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
-from database import Option, Poll, SessionLocal
+from app.database import Option, Poll, SessionLocal
 
 app = FastAPI(title="Poll Service")
 
