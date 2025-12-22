@@ -62,3 +62,17 @@ def vote(poll_id: int, option_id: int):
     db.commit()
     db.close()
     return {"message": "Vote recorded"}
+
+@app.get("/polls/{poll_id}")
+def get_results(poll_id: int):
+    db = SessionLocal()
+    poll = db.query(Poll).filter_by(id=poll_id).first()
+    if not poll:
+        db.close()
+        return {"error": "Poll not found"}
+    result = {
+        "question": poll.question,
+        "results": [{"option": o.text, "votes": o.votes} for o in poll.options]
+    }
+    db.close()
+    return result
