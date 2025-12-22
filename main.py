@@ -76,3 +76,47 @@ def get_results(poll_id: int):
     }
     db.close()
     return result
+
+class OptionAdd(BaseModel):
+    text: str
+
+@app.post("/polls/{poll_id}/options")
+def add_option(poll_id: int, option: OptionAdd):
+    db = SessionLocal()
+    poll = db.query(Poll).filter_by(id=poll_id).first()
+    if not poll:
+        db.close()
+        raise HTTPException(status_code=404, detail="Poll not found")
+    new_option = Option(text=option.text,poll_id=poll_id)
+    db.add(new_option)
+    db.commit()
+    db.refresh(new_option)
+    db.close()
+    return {"message": "Option added", "option_id": new_option.id}
+
+class PollUpdate(BaseModel):
+    question: str
+
+@app.put("/polls/{poll_id}")
+def update_poll(poll_id: int, poll_update: PollUpdate):
+    db = SessionLocal()
+    poll = db.query(Poll).filter_by(id=poll_id).first()
+    if not poll:
+        db.close()
+        raise HTTPException(status_code=404, detail="Poll not found")
+    poll.question = poll_update.question
+    db.commit()
+    updated_question = poll.question
+    db.close()
+    return {"message": "Poll updates successfully", "updated_question": updated_question}
+@app.delete("/polls/{poll_id}/options/{option_id}")
+def delete_option(poll_id: int, option_id: int):
+    db = SessionLocal()
+    option = db.query(Option).filter_by(id=option_id,poll_id=poll_id).first()
+    if not option:
+        db.close()
+        raise HTTPException(status_code=404, detail="Option not found")
+    db.delete(option)
+    db.commit()
+    db.close()
+    return {"message": "Option deleted", "deleted_text": option.text}
