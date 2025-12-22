@@ -104,3 +104,17 @@ def test_get_nonexistent_poll():
     response = client.get("/polls/99999")
     assert response.status_code == 404
     assert "detail" in response.json()
+
+def test_vote():
+    response = client.post("/polls/1/vote/1")
+    assert response.status_code == 200
+    assert response.json()["message"] == "Vote recorded"
+    poll_response = client.get("/polls/1")
+    poll_data = poll_response.json()
+    option_1 = next(opt for opt in poll_data["results"] if opt["id"] == 1)
+    assert option_1["votes"] == 1
+
+def test_vote_invalid_option():
+    response = client.post("/polls/1/vote/999")
+    assert response.status_code == 404
+
