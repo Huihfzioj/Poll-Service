@@ -1,0 +1,21 @@
+# Python cache files
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environment
+venv/
+env/
+
+# SQLite database
+*.db
+
+# VS Code settings
+.vscode/
+
+# Logs
+*.log
+
+# Pytest / coverage
+.coverage
+htmlcov/
