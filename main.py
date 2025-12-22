@@ -50,3 +50,15 @@ def delete_poll(poll_id: int):
         raise HTTPException(status_code=500, detail=f"Error deleting poll: {str(e)}")
     finally :
         db.close()
+
+@app.post("/polls/{poll_id}/vote/{option_id}")
+def vote(poll_id: int, option_id: int):
+    db = SessionLocal()
+    option = db.query(Option).filter_by(id=option_id, poll_id=poll_id).first()
+    if not option:
+        db.close()
+        return {"error": "Option not found"}
+    option.votes +=1
+    db.commit()
+    db.close()
+    return {"message": "Vote recorded"}
