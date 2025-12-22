@@ -109,6 +109,7 @@ def update_poll(poll_id: int, poll_update: PollUpdate):
     updated_question = poll.question
     db.close()
     return {"message": "Poll updates successfully", "updated_question": updated_question}
+
 @app.delete("/polls/{poll_id}/options/{option_id}")
 def delete_option(poll_id: int, option_id: int):
     db = SessionLocal()
@@ -120,3 +121,37 @@ def delete_option(poll_id: int, option_id: int):
     db.commit()
     db.close()
     return {"message": "Option deleted", "deleted_text": option.text}
+
+@app.get("/polls/{poll_id}/stats")
+def get_poll_stats(poll_id: int):
+    with SessionLocal() as db:
+        poll = db.query(Poll).filter_by(id=poll_id).first()
+        if not poll:
+            raise HTTPException(status_code=404, detail="Poll not found")
+        total_votes = sum(option.votes for option in poll.options)
+        options_stats = []
+        for option in poll.options:
+            percentage = (option.votes / total_votes * 100) if total_votes > 0 else 0
+            options_stats.append({
+                "id": option.id,
+                "text": option.text,
+                "votes": option.votes,
+                "percentage": round(percentage,2)
+            })
+        most_voted = None
+        if poll.options:
+            most_voted_option = max(poll.options, key=lambda x: x.votes)
+            most_voted = {
+                "id": most_voted_option.id,
+                "text": most_voted_option.text,
+                "votes": most_voted_option.votes
+            }
+        stats = {
+            "poll_id": poll_id,
+            "question": poll.question,
+            "total_votes": total_votes,
+            "options_count": len(poll.options),
+            "most_voted": most_voted,
+            "options": options_stats
+        }
+        return stats
