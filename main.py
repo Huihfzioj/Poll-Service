@@ -16,111 +16,123 @@ class PollCreate(BaseModel):
 
 @app.post("/polls")
 def create_poll(poll: PollCreate):
-    db = SessionLocal()
-    new_poll = Poll(question = poll.question)
-    db.add(new_poll)
-    db.commit()
-    db.refresh(new_poll)
-    for option in poll.options:
-        db.add(Option(text=option, poll_id=new_poll.id))
-    db.commit()
-    db.refresh(new_poll)
-    db.close()
-    return {"poll_id": new_poll.id}
+    with SessionLocal() as db:
+        new_poll = Poll(question=poll.question)
+        db.add(new_poll)
+        db.commit()
+        db.refresh(new_poll)
+        
+        for option in poll.options:
+            db.add(Option(text=option, poll_id=new_poll.id))
+        
+        db.commit()
+        db.refresh(new_poll)
+        return {"poll_id": new_poll.id}
 
 
 @app.delete("/polls/{poll_id}")
 def delete_poll(poll_id: int):
-    db = SessionLocal()
-    poll = db.query(Poll).filter(Poll.id == poll_id).first()
-    if not poll:
-        raise HTTPException(status_code=404, detail="Poll Not Found")
-    try :
-        db.delete(poll)
-        db.commit()
-        return {
-            "message": f"Poll {poll_id} deleted successfully",
-            "deleted_poll": {
-                "id": poll_id,
-                "question": poll.question
+    with SessionLocal() as db:
+        poll = db.query(Poll).filter(Poll.id == poll_id).first()
+        if not poll:
+            raise HTTPException(status_code=404, detail="Poll Not Found")
+        
+        try:
+            deleted_question = poll.question
+            db.delete(poll)
+            db.commit()
+            return {
+                "message": f"Poll {poll_id} deleted successfully",
+                "deleted_poll": {
+                    "id": poll_id,
+                    "question": deleted_question
+                }
             }
-        }
-    except Exception as e :
-        db.rollback()
-        raise HTTPException(status_code=500, detail=f"Error deleting poll: {str(e)}")
-    finally :
-        db.close()
+        except Exception as e:
+            db.rollback()
+            raise HTTPException(status_code=500, detail=f"Error deleting poll: {str(e)}")
 
 @app.post("/polls/{poll_id}/vote/{option_id}")
 def vote(poll_id: int, option_id: int):
-    db = SessionLocal()
-    option = db.query(Option).filter_by(id=option_id, poll_id=poll_id).first()
-    if not option:
-        db.close()
-        return {"error": "Option not found"}
-    option.votes +=1
-    db.commit()
-    db.close()
-    return {"message": "Vote recorded"}
+    with SessionLocal() as db:
+        option = db.query(Option).filter_by(id=option_id, poll_id=poll_id).first()
+        if not option:
+            raise HTTPException(status_code=404, detail="Option not found")
+        
+        option.votes += 1
+        db.commit()
+        return {"message": "Vote recorded"}
 
 @app.get("/polls/{poll_id}")
 def get_results(poll_id: int):
-    db = SessionLocal()
-    poll = db.query(Poll).filter_by(id=poll_id).first()
-    if not poll:
-        db.close()
-        return {"error": "Poll not found"}
-    result = {
-        "question": poll.question,
-        "results": [{"option": o.text, "votes": o.votes} for o in poll.options]
-    }
-    db.close()
-    return result
+    with SessionLocal() as db:
+        poll = db.query(Poll).filter_by(id=poll_id).first()
+        if not poll:
+            raise HTTPException(status_code=404, detail="Poll not found")
+        
+        result = {
+            "id": poll.id,
+            "question": poll.question,
+            "results": [
+                {
+                    "id": o.id,
+                    "option": o.text, 
+                    "votes": o.votes
+                } for o in poll.options
+            ]
+        }
+        return result
 
 class OptionAdd(BaseModel):
     text: str
 
 @app.post("/polls/{poll_id}/options")
 def add_option(poll_id: int, option: OptionAdd):
-    db = SessionLocal()
-    poll = db.query(Poll).filter_by(id=poll_id).first()
-    if not poll:
-        db.close()
-        raise HTTPException(status_code=404, detail="Poll not found")
-    new_option = Option(text=option.text,poll_id=poll_id)
-    db.add(new_option)
-    db.commit()
-    db.refresh(new_option)
-    db.close()
-    return {"message": "Option added", "option_id": new_option.id}
+    with SessionLocal() as db:
+        poll = db.query(Poll).filter_by(id=poll_id).first()
+        if not poll:
+            raise HTTPException(status_code=404, detail="Poll not found")
+        
+        new_option = Option(text=option.text, poll_id=poll_id)
+        db.add(new_option)
+        db.commit()
+        db.refresh(new_option)
+        return {"message": "Option added", "option_id": new_option.id}
 
 class PollUpdate(BaseModel):
     question: str
 
 @app.put("/polls/{poll_id}")
 def update_poll(poll_id: int, poll_update: PollUpdate):
-    db = SessionLocal()
-    poll = db.query(Poll).filter_by(id=poll_id).first()
-    if not poll:
-        db.close()
-        raise HTTPException(status_code=404, detail="Poll not found")
-    poll.question = poll_update.question
-    db.commit()
-    updated_question = poll.question
-    db.close()
-    return {"message": "Poll updates successfully", "updated_question": updated_question}
+    with SessionLocal() as db:
+        poll = db.query(Poll).filter_by(id=poll_id).first()
+        if not poll:
+            raise HTTPException(status_code=404, detail="Poll not found")
+        
+        poll.question = poll_update.question
+        db.commit()
+        return {
+            "message": "Poll updated successfully", 
+            "updated_question": poll_update.question,
+            "poll_id": poll_id
+        }
 
 @app.delete("/polls/{poll_id}/options/{option_id}")
 def delete_option(poll_id: int, option_id: int):
-    db = SessionLocal()
-    option = db.query(Option).filter_by(id=option_id,poll_id=poll_id).first()
-    if not option:
-        db.close()
-        raise HTTPException(status_code=404, detail="Option not found")
-    db.delete(option)
-    db.commit()
-    db.close()
-    return {"message": "Option deleted", "deleted_text": option.text}
+    with SessionLocal() as db:
+        option = db.query(Option).filter_by(id=option_id, poll_id=poll_id).first()
+        if not option:
+            raise HTTPException(status_code=404, detail="Option not found")
+        
+        deleted_text = option.text
+        db.delete(option)
+        db.commit()
+        return {
+            "message": "Option deleted", 
+            "deleted_text": deleted_text,
+            "poll_id": poll_id,
+            "option_id": option_id
+        }
 
 @app.get("/polls/{poll_id}/stats")
 def get_poll_stats(poll_id: int):
