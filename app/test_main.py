@@ -1,10 +1,10 @@
 from fastapi.testclient import TestClient
-from main import app, PollCreate, PollUpdate, OptionAdd
+from app.main import app, PollCreate, PollUpdate, OptionAdd
 from sqlalchemy import create_engine
 from sqlalchemy.pool import StaticPool
 from sqlalchemy.orm import sessionmaker
 import pytest
-from database import Base, Poll, Option, SessionLocal
+from app.database import Base, Poll, Option, SessionLocal
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
 
