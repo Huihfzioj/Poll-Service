@@ -84,3 +84,23 @@ def test_create_poll_invalid():
 
     response = client.post("/polls", json={"question": "Test", "options": []})
     assert response.status_code == 422
+
+def test_get_poll():
+
+    poll_data = {
+        "question": "Dynamic Test Poll",
+        "options": ["Opt1", "Opt2"]
+    }
+    create_response = client.post("/polls", json=poll_data)
+    poll_id = create_response.json()["poll_id"]
+    response = client.get(f"/polls/{poll_id}")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == poll_id
+    assert data["question"] == poll_data["question"]
+    assert len(data["results"]) == len(poll_data["options"])
+
+def test_get_nonexistent_poll():
+    response = client.get("/polls/99999")
+    assert response.status_code == 404
+    assert "detail" in response.json()
