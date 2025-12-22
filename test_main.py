@@ -61,3 +61,26 @@ def test_health():
     response = client.get("/health")
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
+
+def test_create_poll():
+    poll_data = {
+        "question": "What is your favorite color?",
+        "options": ["Red", "Blue", "Green", "Yellow"]
+    }
+    response = client.post("/polls", json=poll_data)
+    assert response.status_code == 200
+    data = response.json()
+    assert "poll_id" in data
+    assert isinstance(data["poll_id"], int)
+    return data['poll_id']
+
+def test_create_poll_invalid():
+
+    response = client.post("/polls", json={"options": ["A", "B"]})
+    assert response.status_code == 422
+
+    response = client.post("/polls", json={"question": "Test"})
+    assert response.status_code == 422
+
+    response = client.post("/polls", json={"question": "Test", "options": []})
+    assert response.status_code == 422
