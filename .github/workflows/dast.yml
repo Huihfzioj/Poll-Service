@@ -34,3 +34,4 @@ jobs:
         with:
           target: http://localhost:8000
           fail_action: false
+          allow_issue_writing: false
