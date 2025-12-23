@@ -3,7 +3,7 @@ from fastapi import FastAPI, HTTPException, Request
 from prometheus_client import Counter, Histogram
 from pydantic import BaseModel
 import logging
-from database import Option, Poll, SessionLocal
+from app.database import Option, Poll, SessionLocal
 from prometheus_fastapi_instrumentator import Instrumentator
 
 logging.basicConfig(
