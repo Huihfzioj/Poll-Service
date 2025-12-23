@@ -6,6 +6,11 @@ on:
 jobs:
   zap_scan:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      security-events: write
+      actions: write
+      checks: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
