@@ -6,7 +6,6 @@ on:
 jobs:
   zap_scan:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -22,7 +21,7 @@ jobs:
 
       - name: Start FastAPI app
         run: |
-          uvicorn main:app --host 0.0.0.0 --port 8000 &
+          uvicorn app.main:app --host 0.0.0.0 --port 8000 &
           sleep 10
 
       - name: OWASP ZAP Scan
