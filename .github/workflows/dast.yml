@@ -35,10 +35,11 @@ jobs:
           target: http://localhost:8000
           fail_action: false
           allow_issue_writing: false
+          upload_artifacts: false
       - name: Upload ZAP reports
         uses: actions/upload-artifact@v4
         with:
-          name: zap-reports
+          name: zapreports
           path: |
             report_json.json
             report_md.md
