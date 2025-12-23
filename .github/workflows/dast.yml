@@ -38,7 +38,7 @@ jobs:
       - name: Upload ZAP reports
         uses: actions/upload-artifact@v4
         with:
-          name: zap-reports
+          name: zapreports
           path: |
             report_json.json
             report_md.md
