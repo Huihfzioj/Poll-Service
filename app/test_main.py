@@ -77,7 +77,6 @@ def test_create_poll():
     data = response.json()
     assert "poll_id" in data
     assert isinstance(data["poll_id"], int)
-    return data['poll_id']
 
 def test_create_poll_invalid():
 
