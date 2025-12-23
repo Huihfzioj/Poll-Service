@@ -47,11 +47,6 @@ async def metrics_middleware(request: Request, call_next):
 
 Instrumentator().instrument(app).expose(app, endpoint="/metrics")
 
-@app.get("/health")
-def health():
-    logger.info("Health check requested")
-    return {"status": "ok"}
-
 class PollCreate(BaseModel):
     question: str
     options: List[str]
@@ -62,16 +57,23 @@ class OptionAdd(BaseModel):
 class PollUpdate(BaseModel):
     question: str
 
+@app.get("/health")
+def health():
+    logger.info("Health check requested")
+    return {"status": "ok"}
+
 @app.post("/polls")
 def create_poll(poll: PollCreate):
     logger.info(f"Creating poll with question: {poll.question}")
     with SessionLocal() as db:
+        DB_OPERATIONS.labels(operation="create_poll").inc()
         new_poll = Poll(question=poll.question)
         db.add(new_poll)
         db.commit()
         db.refresh(new_poll)
         
         for option in poll.options:
+            DB_OPERATIONS.labels(operation="add_option").inc()
             db.add(Option(text=option, poll_id=new_poll.id))
         
         db.commit()
@@ -83,6 +85,7 @@ def create_poll(poll: PollCreate):
 def delete_poll(poll_id: int):
     logger.info(f"Deleting poll with id: {poll_id}")
     with SessionLocal() as db:
+        DB_OPERATIONS.labels(operation="delete_poll").inc()
         poll = db.query(Poll).filter(Poll.id == poll_id).first()
         if not poll:
             logger.warning(f"Poll {poll_id} not found for deletion")
@@ -105,6 +108,7 @@ def delete_poll(poll_id: int):
 def vote(poll_id: int, option_id: int):
     logger.info(f"Voting on poll {poll_id}, option {option_id}")
     with SessionLocal() as db:
+        DB_OPERATIONS.labels(operation="vote").inc()
         option = db.query(Option).filter_by(id=option_id, poll_id=poll_id).first()
         if not option:
             logger.warning(f"Option {option_id} not found in poll {poll_id}")
@@ -118,6 +122,7 @@ def vote(poll_id: int, option_id: int):
 def get_results(poll_id: int):
     logger.info(f"Fetching results for poll {poll_id}")
     with SessionLocal() as db:
+        DB_OPERATIONS.labels(operation="get_results").inc()
         poll = db.query(Poll).filter_by(id=poll_id).first()
         if not poll:
             logger.warning(f"Poll {poll_id} not found for results")
@@ -134,6 +139,7 @@ def get_results(poll_id: int):
 def add_option(poll_id: int, option: OptionAdd):
     logger.info(f"Adding option to poll {poll_id}: {option.text}")
     with SessionLocal() as db:
+        DB_OPERATIONS.labels(operation="add_option").inc()
         poll = db.query(Poll).filter_by(id=poll_id).first()
         if not poll:
             logger.warning(f"Poll {poll_id} not found for adding option")
@@ -149,6 +155,7 @@ def add_option(poll_id: int, option: OptionAdd):
 def update_poll(poll_id: int, poll_update: PollUpdate):
     logger.info(f"Updating poll {poll_id} with new question: {poll_update.question}")
     with SessionLocal() as db:
+        DB_OPERATIONS.labels(operation="update_poll").inc()
         poll = db.query(Poll).filter_by(id=poll_id).first()
         if not poll:
             logger.warning(f"Poll {poll_id} not found for update")
@@ -166,6 +173,7 @@ def update_poll(poll_id: int, poll_update: PollUpdate):
 def delete_option(poll_id: int, option_id: int):
     logger.info(f"Deleting option {option_id} from poll {poll_id}")
     with SessionLocal() as db:
+        DB_OPERATIONS.labels(operation="delete_option").inc()
         option = db.query(Option).filter_by(id=option_id, poll_id=poll_id).first()
         if not option:
             logger.warning(f"Option {option_id} not found in poll {poll_id} for deletion")
@@ -185,6 +193,7 @@ def delete_option(poll_id: int, option_id: int):
 def get_poll_stats(poll_id: int):
     logger.info(f"Fetching stats for poll {poll_id}")
     with SessionLocal() as db:
+        DB_OPERATIONS.labels(operation="get_stats").inc()
         poll = db.query(Poll).filter_by(id=poll_id).first()
         if not poll:
             logger.warning(f"Poll {poll_id} not found for stats")
