@@ -1,7 +1,7 @@
 name: DAST
 
 on:
-  workflow_dispatch:  # manual trigger
+  pull_request:
 
 jobs:
   zap_scan:
@@ -28,3 +28,4 @@ jobs:
         uses: zaproxy/action-baseline@v0.10.0
         with:
           target: http://localhost:8000
+          failAction: true
