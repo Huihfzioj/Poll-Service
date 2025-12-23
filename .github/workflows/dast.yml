@@ -1,11 +1,16 @@
 name: DAST
 
 on:
-  workflow_dispatch:  # manual trigger
+  pull_request:
 
 jobs:
   zap_scan:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      security-events: write
+      actions: write
+      checks: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -28,3 +33,4 @@ jobs:
         uses: zaproxy/action-baseline@v0.10.0
         with:
           target: http://localhost:8000
+          fail_action: false

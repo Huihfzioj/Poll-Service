@@ -57,6 +57,10 @@ class OptionAdd(BaseModel):
 class PollUpdate(BaseModel):
     question: str
 
+@app.get("/")
+def read_root():
+    return {"status": "ok"}
+
 @app.get("/health")
 def health():
     logger.info("Health check requested")
