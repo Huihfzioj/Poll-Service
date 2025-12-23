@@ -52,3 +52,8 @@ jobs:
         run: |
           docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/poll-service:latest .
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/poll-service:latest
+
+      - name: Start FastAPI app
+        run: |
+          uvicorn main:app --host 0.0.0.0 --port 8000 &
+          sleep 5  # wait for server to start
