@@ -245,14 +245,25 @@ jobs:
       - name: DAST scan (ZAP)
         run: |
           echo "Running ZAP security scan..."
-          # Run ZAP scan
-          docker run --network host \
+          mkdir -p zap-output
+          
+          # Run ZAP with proper volume mount
+          docker run --rm --network host \
+            -v $(pwd)/zap-output:/zap/wrk:rw \
             zaproxy/zap-stable zap-baseline.py \
             -t http://localhost:8000 \
-            -r zap-report.html 2>&1 || echo "ZAP scan completed"
+            -r report.html \
+            -J report.json \
+            -x report.xml
           
-          # Ensure file exists for artifact upload
-          touch zap-report.html
+          # Move report to root directory
+          if [ -f "zap-output/report.html" ]; then
+            mv zap-output/report.html zap-report.html
+            echo "ZAP report generated successfully"
+          else
+            echo "ZAP report not found, creating empty report"
+            echo "<html><body><h1>ZAP Scan</h1><p>Report generation failed</p></body></html>" > zap-report.html
+          fi
       
       - name: Upload reports
         uses: actions/upload-artifact@v4
