@@ -7,9 +7,8 @@ on:
     branches: [dev, main]
 
 jobs:
-  build-test-scan-deploy:
+  build-test-scan:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -41,19 +40,59 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Ensure Docker Hub repo exists
-        run: |
-          curl -s -o /dev/null -w "%{http_code}" -u "${{ secrets.DOCKERHUB_USERNAME }}:${{ secrets.DOCKERHUB_TOKEN }}" \
-          -X POST https://hub.docker.com/v2/repositories/${{ secrets.DOCKERHUB_USERNAME }}/poll-service/ \
-          -H "Content-Type: application/json" \
-          -d '{"namespace":"${{ secrets.DOCKERHUB_USERNAME }}","name":"poll-service","is_private":false}'
-
       - name: Build and push Docker image
         run: |
           docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/poll-service:latest .
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/poll-service:latest
 
-      - name: Start FastAPI app
+  deploy-to-kind:
+    needs: build-test-scan
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Kind Cluster
+        uses: engineerd/setup-kind@v0.6.0
+        with:
+          version: "v0.20.0"
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Install Ingress NGINX
         run: |
-          uvicorn app.main:app --host 0.0.0.0 --port 8000 &
-          sleep 5  # wait for server to start
+          kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
+          kubectl wait --namespace ingress-nginx \
+            --for=condition=ready pod \
+            --selector=app.kubernetes.io/component=controller \
+            --timeout=90s
+
+      - name: Deploy to Kubernetes
+        run: |
+          kubectl apply -f k8s/deployment.yaml
+          kubectl apply -f k8s/service.yaml
+          kubectl apply -f k8s/ingress.yaml
+
+      - name: Wait for service readiness
+        run: |
+          chmod +x scripts/wait-for-service.sh
+          ./scripts/wait-for-service.sh poll-service default 8000 120
+
+      - name: Run DAST Scan
+        uses: zaproxy/action-baseline@v0.14.0
+        with:
+          target: http://poll.127.0.0.1.nip.io
+          cmd_options: "-I"
+          fail_action: false
+          allow_issue_writing: false
+
+      - name: Upload ZAP reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: zapreports
+          path: |
+            report_json.json
+            report_md.md
+            report_html.html
