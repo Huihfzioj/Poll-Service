@@ -4,3 +4,4 @@ sqlalchemy
 pytest
 httpx
 prometheus-fastapi-instrumentator
+prometheus_client
