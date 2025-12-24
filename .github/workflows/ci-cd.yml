@@ -43,7 +43,7 @@ jobs:
 
   deploy-and-observe:
     needs: build-test-scan
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev'
     runs-on: ubuntu-latest
 
     steps:
