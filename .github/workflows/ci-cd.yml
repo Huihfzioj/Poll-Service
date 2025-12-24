@@ -152,14 +152,8 @@ jobs:
           name: security-reports
           path: zap-report.html
           
-      - name: Upload monitoring screenshots
+      - name: Generate monitoring status
         if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: monitoring-status
-          path: |
-            monitoring-status.txt
-          retention-days: 7
         run: |
           echo "=== Monitoring Stack Status ===" > monitoring-status.txt
           echo "Time: $(date)" >> monitoring-status.txt
@@ -169,3 +163,11 @@ jobs:
           kubectl get svc >> monitoring-status.txt
           echo -e "\n=== Deployments ===" >> monitoring-status.txt
           kubectl get deployments >> monitoring-status.txt
+      
+      - name: Upload monitoring status
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: monitoring-status
+          path: monitoring-status.txt
+          retention-days: 7
