@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+      containers:
+        - name: grafana
+          image: grafana/grafana:10.2.0
+          ports:
+            - containerPort: 3000
+          env:
+            - name: GF_SECURITY_ADMIN_USER
+              value: admin
+            - name: GF_SECURITY_ADMIN_PASSWORD
+              value: admin
+            # Auto-configure datasource
+            - name: GF_INSTALL_PLUGINS
+              value: "grafana-piechart-panel"
+          volumeMounts:
+            # Mount dashboard config
+            - name: dashboard-config
+              mountPath: /etc/grafana/provisioning/dashboards/poll-dashboard.json
+              subPath: poll-dashboard.json
+            # Mount datasource config
+            - name: datasource-config
+              mountPath: /etc/grafana/provisioning/datasources/datasource.yaml
+              subPath: datasource.yaml
+            # Mount dashboard provider
+            - name: provider-config
+              mountPath: /etc/grafana/provisioning/dashboards/default.yaml
+              subPath: default.yaml
+      volumes:
+        - name: dashboard-config
+          configMap:
+            name: grafana-dashboard
+        - name: datasource-config
+          configMap:
+            name: grafana-datasource
+        - name: provider-config
+          configMap:
+            name: grafana-provider
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+spec:
+  selector:
+    app: grafana
+  ports:
+    - port: 3000
+      targetPort: 3000

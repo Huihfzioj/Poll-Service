@@ -1,0 +1,209 @@
+{
+  "title": "Poll Service Dashboard",
+  "tags": ["poll", "fastapi", "monitoring"],
+  "timezone": "browser",
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "HTTP Request Rate (requests/sec)",
+      "description": "Rate of requests per second",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+      "targets": [
+        {
+          "expr": "rate(poll_service_request_count_total[5m])",
+          "legendFormat": "{{method}} {{endpoint}} ({{http_status}})",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "min": 0,
+          "decimals": 2
+        }
+      },
+      "options": {
+        "legend": {"displayMode": "table", "placement": "bottom"}
+      }
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Request Latency - 95th Percentile",
+      "description": "95th percentile of request latency",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(poll_service_request_latency_seconds_bucket[5m])) by (le, endpoint, method))",
+          "legendFormat": "P95 {{method}} {{endpoint}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "min": 0,
+          "decimals": 4
+        }
+      }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Total Requests",
+      "gridPos": {"h": 6, "w": 6, "x": 0, "y": 8},
+      "targets": [
+        {
+          "expr": "sum(poll_service_request_count_total)",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "thresholds": {
+            "steps": [
+              {"color": "green", "value": null}
+            ]
+          }
+        }
+      },
+      "options": {
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "values": true,
+          "calcs": ["lastNotNull"]
+        },
+        "textMode": "auto",
+        "colorMode": "value"
+      }
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "HTTP Status Code Distribution",
+      "description": "Requests by HTTP status code",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 14},
+      "targets": [
+        {
+          "expr": "sum by (http_status) (rate(poll_service_request_count_total[5m]))",
+          "legendFormat": "HTTP {{http_status}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps"
+        }
+      }
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Endpoint Request Distribution",
+      "description": "Requests by endpoint",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 14},
+      "targets": [
+        {
+          "expr": "sum by (endpoint) (rate(poll_service_request_count_total[5m]))",
+          "legendFormat": "{{endpoint}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps"
+        }
+      }
+    },
+    {
+      "id": 7,
+      "type": "table",
+      "title": "Current Metrics Snapshot",
+      "description": "Latest metric values",
+      "gridPos": {"h": 10, "w": 24, "x": 0, "y": 22},
+      "targets": [
+        {
+          "expr": "poll_service_request_count_total",
+          "instant": true,
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "sortBy": ["desc"]
+      },
+      "fieldConfig": {
+        "defaults": {
+          "displayName": "{{method}} {{endpoint}} ({{http_status}})"
+        }
+      }
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "Application Process Metrics",
+      "description": "System metrics from FastAPI Instrumentator",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 32},
+      "targets": [
+        {
+          "expr": "process_cpu_seconds_total",
+          "legendFormat": "CPU Time",
+          "refId": "A"
+        },
+        {
+          "expr": "process_resident_memory_bytes",
+          "legendFormat": "Memory",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "min": 0
+        },
+        "overrides": [
+          {
+            "matcher": {"id": "byName", "options": "CPU Time"},
+            "properties": [
+              {"id": "unit", "value": "s"}
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 9,
+      "type": "table",
+      "title": "Endpoint Latency Breakdown",
+      "gridPos": {"h": 10, "w": 12, "x": 0, "y": 40},
+      "targets": [
+        {
+          "expr": "rate(poll_service_request_latency_seconds_sum[5m]) / rate(poll_service_request_latency_seconds_count[5m])",
+          "instant": true,
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "decimals": 2,
+          "displayName": "{{endpoint}} ({{method}})"
+        }
+      }
+    }
+  ],
+  "refresh": "10s",
+  "time": {
+    "from": "now-15m",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": ["5s", "10s", "30s", "1m", "5m"]
+  }
+}
