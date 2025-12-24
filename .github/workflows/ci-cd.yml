@@ -48,8 +48,10 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Create kind cluster
-        uses: engineerd/setup-kind@v0.6.0
+      - name: Setup Kind cluster
+        uses: container-tools/kind-action@v1
+        with:
+          version: "v0.20.0"
 
       - name: Install kubectl
         uses: azure/setup-kubectl@v3
