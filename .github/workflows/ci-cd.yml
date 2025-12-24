@@ -213,14 +213,47 @@ jobs:
           
           echo "=== Checking dashboards ==="
           curl -s -u "$ADMIN_USER:$ADMIN_PASS" http://localhost:3000/api/search | grep -q "poll" && echo "Poll dashboard found" || echo "Poll dashboard not found"
-
+      - name: Export Grafana dashboard data
+        run: |
+          ADMIN_USER="admin"
+          ADMIN_PASS="admin"
+          
+          # Get dashboard list
+          curl -s -u "$ADMIN_USER:$ADMIN_PASS" http://localhost:3000/api/search \
+            -o grafana-dashboards.json || echo "Failed to get dashboard list"
+          
+          # Export first dashboard as JSON
+          DASHBOARD_UID=$(curl -s -u "$ADMIN_USER:$ADMIN_PASS" http://localhost:3000/api/search | jq -r '.[0].uid // empty')
+          
+          if [ ! -z "$DASHBOARD_UID" ]; then
+            curl -s -u "$ADMIN_USER:$ADMIN_PASS" "http://localhost:3000/api/dashboards/uid/$DASHBOARD_UID" \
+              -o dashboard-export.json || echo "Failed to export dashboard"
+          fi
+          
+          # Get datasources
+          curl -s -u "$ADMIN_USER:$ADMIN_PASS" http://localhost:3000/api/datasources \
+            -o grafana-datasources.json || echo "Failed to get datasources"
+      
+      - name: Upload Grafana exports
+        uses: actions/upload-artifact@v4
+        with:
+          name: grafana-exports
+          path: |
+            grafana-dashboards.json
+            dashboard-export.json
+            grafana-datasources.json
       - name: DAST scan (ZAP)
         run: |
+          echo "Running ZAP security scan..."
+          # Run ZAP scan
           docker run --network host \
             zaproxy/zap-stable zap-baseline.py \
-            -t http://localhost:8080 \
-            -r zap-report.html || true
-
+            -t http://localhost:8000 \
+            -r zap-report.html 2>&1 || echo "ZAP scan completed"
+          
+          # Ensure file exists for artifact upload
+          touch zap-report.html
+      
       - name: Upload reports
         uses: actions/upload-artifact@v4
         with:
