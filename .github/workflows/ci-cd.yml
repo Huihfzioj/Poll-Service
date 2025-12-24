@@ -66,8 +66,8 @@ jobs:
       - name: Deploy monitoring stack
         run: |
           # Deploy Prometheus (config + deployment)
-          kubectl apply -f k8s/prometheus-config.yaml
-          kubectl apply -f k8s/prometheus-deployment.yaml
+          kubectl apply -f k8s/prometheus-config.yml
+          kubectl apply -f k8s/prometheus-deployment.yml
           
           # Deploy Prometheus proxy if you have it
           if [ -f "k8s/prometheus-proxy.yaml" ]; then
@@ -75,15 +75,15 @@ jobs:
           fi
           
           # Deploy Grafana config and deployment
-          kubectl apply -f k8s/grafana-config.yaml
-          kubectl apply -f k8s/grafana-deployment.yaml
+          kubectl apply -f k8s/grafana-config.yml
+          kubectl apply -f k8s/grafana-deployment.yml
 
       - name: Deploy application
         run: |
           sed "s|IMAGE_PLACEHOLDER|${{ secrets.DOCKERHUB_USERNAME }}/poll-service:latest|g" \
-            k8s/deployment.yaml | kubectl apply -f -
-          kubectl apply -f k8s/service.yaml
-          kubectl apply -f k8s/ingress.yaml
+            k8s/deployment.yml | kubectl apply -f -
+          kubectl apply -f k8s/service.yml
+          kubectl apply -f k8s/ingress.yml
 
       - name: Wait for all resources
         run: |
