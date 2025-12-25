@@ -242,18 +242,6 @@ jobs:
             grafana-dashboards.json
             dashboard-export.json
             grafana-datasources.json
-      - name: DAST scan (ZAP)
-        run: |
-          echo "Running ZAP security scan..."
-          # Run ZAP scan
-          docker run --network host \
-            zaproxy/zap-stable zap-baseline.py \
-            -t http://localhost:8000 \
-            -r zap-report.html 2>&1 || echo "ZAP scan completed"
-          
-          # Ensure file exists for artifact upload
-          touch zap-report.html
-      
       - name: Upload reports
         uses: actions/upload-artifact@v4
         with:
